@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Analysis.iml" filepath="$PROJECT_DIR$/Analysis.iml" />
+      <module fileurl="file://$PROJECT_DIR$/JavaAnalysis/JavaAnalysis.iml" filepath="$PROJECT_DIR$/JavaAnalysis/JavaAnalysis.iml" />
+    </modules>
+  </component>
+</project>
