@@ -77,32 +77,56 @@ public class Enumeration {
      * 
      */
     public static int[][] finalCostMatrixAfterExclusionsAndInclusions(int[][] matrix, List<int[]> exclusions, List<int[]> inclusions, boolean includeOrNot) {
+        int n = matrix.length;
         int replacingValue = totalSum(matrix) + 1;
+        int blockingValue = replacingValue + 1;     
         int[][] workingMatrix = deepCopy(matrix);
+        
         if (includeOrNot) {
-        for (int[] pair : inclusions) {
-            workingMatrix[pair[0]][pair[1]] = 0;
-            for (int i = 0; i < workingMatrix.length; i++) {
-                if (i != pair[1]) {
-                    workingMatrix[pair[0]][i] = replacingValue + 1;
+            for (int[] pair : inclusions) {
+                int row = pair[0];
+                int col = pair[1];
+                
+                workingMatrix[row][col] = 0;
+                
+                // Block all other cells in this row
+                for (int j = 0; j < n; j++) {
+                    if (j != col) {
+                        workingMatrix[row][j] = blockingValue;
+                    }
                 }
-            }
-            for (int j = 0; j < workingMatrix.length; j++) {
-                if (j != pair[0]) {
-                    workingMatrix[j][pair[1]] = replacingValue + 1;
+                
+                // Block all other cells in this column
+                for (int i = 0; i < n; i++) {
+                    if (i != row) {
+                        workingMatrix[i][col] = blockingValue;
+                    }
                 }
             }
         }
-        }
-
+        
         for (int[] pair : exclusions) {
-            workingMatrix[pair[0]][pair[1]] = replacingValue;
+            int row = pair[0];
+            int col = pair[1];
+            
+            // Check if this cell is part of an inclusion
+            boolean isIncluded = false;
+            for (int[] inc : inclusions) {
+                if (inc[0] == row && inc[1] == col) {
+                    isIncluded = true;
+                    break;
+                }
+            }
+            
+            // Only apply exclusion if it's not an included cell
+            if (!isIncluded) {
+                workingMatrix[row][col] = replacingValue;
+            }
         }
         
         return workingMatrix;
-    
     }
-
+    
     private static int[][] deepCopy(int[][] original) {
         int[][] copy = new int[original.length][original[0].length];
         for (int i = 0; i < original.length; i++)
@@ -155,97 +179,108 @@ public class Enumeration {
     /*
      * Method to get the top k paths.
      */
+
     public static List<AssignmentResult> getTopKMurtys(int[][] costMatrix, int k) {
         List<AssignmentResult> results = new ArrayList<>();
         PriorityQueue<MurtyNode> pq = new PriorityQueue<>();
-        Set<List<Integer>> seen = new HashSet<>();
 
         int[] baseAssign = hungarianAlgo.solveHungarian(costMatrix);
+        if (baseAssign == null) return results;
+
         List<Integer> baseList = toList(baseAssign);
         double baseCost = calculateCost(costMatrix, baseAssign);
         AssignmentResult baseResult = new AssignmentResult(baseList, baseCost);
+
         pq.offer(new MurtyNode(baseResult, new ArrayList<>(), new ArrayList<>()));
-        seen.add(baseList);
+
+        int infeasibleThreshold = totalSum(costMatrix) + 1;
 
         while (!pq.isEmpty() && results.size() < k) {
             MurtyNode current = pq.poll();
             results.add(current.result);
+            
+            List<Integer> currentAssignment = current.result.assignments;
+            int n = currentAssignment.size();
 
-            for (int i = 0; i < current.result.assignments.size(); i++) {
-                int col = current.result.assignments.get(i);
+            // Find the first position that's not already forced by inclusions
+            int startPos = 0;
+            for (int[] inc : current.inclusions) {
+                startPos = Math.max(startPos, inc[0] + 1);
+            }
 
-                boolean alreadyExcluded = false;
-                for (int[] ex : current.exclusions) {
-                    if (ex[0] == i && ex[1] == col) {
-                        alreadyExcluded = true;
-                        break;
-                    }
-                }
-                if (alreadyExcluded) continue;
-
-                List<int[]> newExclusions = new ArrayList<>(current.exclusions);
-                newExclusions.add(new int[] { i, col });
-
+            for (int i = startPos; i < n; i++) {
+                // Build new inclusions: force all assignments from startPos to i-1
                 List<int[]> newInclusions = new ArrayList<>(current.inclusions);
-                for (int j = 0; j < i; j++) {
-                    newInclusions.add(new int[] { j, current.result.assignments.get(j) });
+                for (int j = startPos; j < i; j++) {
+                    newInclusions.add(new int[]{j, currentAssignment.get(j)});
                 }
 
-                int[][] modifiedMatrix = finalCostMatrixAfterExclusionsAndInclusions(costMatrix, newExclusions, newInclusions, true);
+                // Add exclusion at position i
+                List<int[]> newExclusions = new ArrayList<>(current.exclusions);
+                newExclusions.add(new int[]{i, currentAssignment.get(i)});
+
+                // Modify cost matrix
+                int[][] modifiedMatrix = finalCostMatrixAfterExclusionsAndInclusions(
+                    costMatrix, newExclusions, newInclusions, true
+                );
 
                 // Solve subproblem
-                int[] newAssign = hungarianAlgo.solveHungarian(modifiedMatrix);
-                if (newAssign == null) continue;
+                int[] newAssignment = hungarianAlgo.solveHungarian(modifiedMatrix);
+                if (newAssignment == null) continue;
 
-                List<Integer> newList = toList(newAssign);
-                if (seen.contains(newList)) continue;
+                // Check if the solution is infeasible based on modified cost
+                double modCost = calculateCost(modifiedMatrix, newAssignment);
+                if (modCost >= infeasibleThreshold) {
+                    continue;
+                }
 
-                double newCost = calculateCost(costMatrix, newAssign);
-                AssignmentResult newResult = new AssignmentResult(newList, newCost);
+                // Calculate actual cost and add to queue
+                double actualCost = calculateCost(costMatrix, newAssignment);
+                AssignmentResult newResult = new AssignmentResult(toList(newAssignment), actualCost);
                 pq.offer(new MurtyNode(newResult, newExclusions, newInclusions));
-                seen.add(newList);
             }
         }
+
         return results;
     }
-    public static void main(String[] args) {
-        int trials = 5;
-        int n = 10;
-        List<Integer> ks = Arrays.asList(1000, 5000, 10000, 25000, 50000, 100000,500000, 1000000, 2000000, 3000000, 3700000);
-        List<Long> averageTimes = new ArrayList<>();
+    // public static void main(String[] args) {
+    //    int[][] costMatrix = generateMatrix(10, 1000, 9999);
+    //     List<AssignmentResult> results = getTopKMurtys(costMatrix, 3700000);
 
-        for (int k : ks) {
-            long totalTime = 0;
+    //     List<AssignmentResult> bruteResults = generateAllAssignments(costMatrix);
+    //     System.out.println("Comparison: ");
+    //     boolean match = compareMethods(results, bruteResults);
+    // }   
 
-            for (int t = 0; t < trials; t++) {
-                int[][] costMatrix = generateMatrix(n, 1000, 9999);
-
-                long start = System.currentTimeMillis();
-                List<AssignmentResult> result = getTopKMurtys(costMatrix, k);
-                long end = System.currentTimeMillis();
-
-                totalTime += (end - start);
-            }
-
-            long avgTime = totalTime / trials;
-            averageTimes.add(avgTime);
-
-            System.out.println("K = " + k + ", Average Time = " + avgTime + " ms");
-        }
-        
-    }
     
     //Helper methods below, to print, and other stuffs.
 
-    public static long factorial(int n) {
-        long result = 1;
-        for (int i = 2; i <= n; i++) {
-            result *= i;
+    public static boolean compareMethods(List<AssignmentResult> murty, List<AssignmentResult> bruteForce) {
+        if (murty.size() != bruteForce.size()) {
+            System.out.println("Different number of solutions!");
+            System.out.println("Murty: " + murty.size() + ", Brute Force: " + bruteForce.size());
+            return false;
         }
-        return result;
+        
+        boolean allMatch = true;
+        for (int i = 0; i < murty.size(); i++) {
+            double murtysCost = murty.get(i).totalCost;
+            double bruteForceCost = bruteForce.get(i).totalCost;
+            
+            if (Math.abs(murtysCost - bruteForceCost) > 0.001) {
+                System.out.println("Cost mismatch at position " + i);
+                System.out.println("Murty: " + murty.get(i).assignments + " cost=" + murtysCost);
+                System.out.println("Brute: " + bruteForce.get(i).assignments + " cost=" + bruteForceCost);
+                allMatch = false;
+            }
+        }
+        
+        if (allMatch) {
+            System.out.println("All results match between Murty and Brute Force");
+        }
+        
+        return allMatch;
     }
-
-
     public static int[][] generateMatrix(int size, int min, int max) {
         Random rand = new Random();
         int[][] returnMatrix = new int[size][size];
