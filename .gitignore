@@ -24,10 +24,20 @@ bin/
 
 ### VS Code ###
 .vscode/
+.vscode-server/
 
 ### Mac OS ###
 .DS_Store
 
+### User Directories and Shell History ###
+.local/
+.cache/
+.bashrc
+.bash_history
+.bash_logout
+.wget-hsts
+
+### File Types to Ignore ###
 *.class
 *.exe
-
+*.txt
