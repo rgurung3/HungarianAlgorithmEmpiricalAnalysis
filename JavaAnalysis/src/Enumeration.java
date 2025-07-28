@@ -38,7 +38,6 @@ public class Enumeration {
         }
     }
 
-    
     public static boolean isValid(List<Integer> assignments, List<int[]> exclusions, List<int[]> inclusions) {
         for (int i = 0; i < assignments.size(); i++) {
             for (int[] val : exclusions) {
@@ -46,9 +45,9 @@ public class Enumeration {
                     return false;
                 }
             }
-            
-            for(int[] val : inclusions) {
-                if(assignments.get(val[0]) != val[1]) {
+
+            for (int[] val : inclusions) {
+                if (assignments.get(val[0]) != val[1]) {
                     return false;
                 }
             }
@@ -65,7 +64,6 @@ public class Enumeration {
         return null;
     }
 
-
     /*
      * part 2B begins here.
      */
@@ -79,23 +77,23 @@ public class Enumeration {
     public static int[][] finalCostMatrixAfterExclusionsAndInclusions(int[][] matrix, List<int[]> exclusions, List<int[]> inclusions, boolean includeOrNot) {
         int n = matrix.length;
         int replacingValue = totalSum(matrix) + 1;
-        int blockingValue = replacingValue + 1;     
+        int blockingValue = replacingValue + 1;
         int[][] workingMatrix = deepCopy(matrix);
-        
+
         if (includeOrNot) {
             for (int[] pair : inclusions) {
                 int row = pair[0];
                 int col = pair[1];
-                
+
                 workingMatrix[row][col] = 0;
-                
+
                 // Block all other cells in this row
                 for (int j = 0; j < n; j++) {
                     if (j != col) {
                         workingMatrix[row][j] = blockingValue;
                     }
                 }
-                
+
                 // Block all other cells in this column
                 for (int i = 0; i < n; i++) {
                     if (i != row) {
@@ -104,11 +102,11 @@ public class Enumeration {
                 }
             }
         }
-        
+
         for (int[] pair : exclusions) {
             int row = pair[0];
             int col = pair[1];
-            
+
             // Check if this cell is part of an inclusion
             boolean isIncluded = false;
             for (int[] inc : inclusions) {
@@ -117,16 +115,16 @@ public class Enumeration {
                     break;
                 }
             }
-            
+
             // Only apply exclusion if it's not an included cell
             if (!isIncluded) {
                 workingMatrix[row][col] = replacingValue;
             }
         }
-        
+
         return workingMatrix;
     }
-    
+
     private static int[][] deepCopy(int[][] original) {
         int[][] copy = new int[original.length][original[0].length];
         for (int i = 0; i < original.length; i++)
@@ -140,28 +138,18 @@ public class Enumeration {
      * Method to print out the results.
      */
     public static void printResults(List<AssignmentResult> results) {
-        int count = 0 ;
+        int count = 0;
         for (AssignmentResult result : results) {
             count++;
-            System.out.println(result.assignments+ " and the total cost of it is: "+ result.totalCost);
+            System.out.println(result.assignments + " and the total cost of it is: " + result.totalCost);
         }
-        System.out.println("The total amount of results: "+count);
+        System.out.println("The total amount of results: " + count);
     }
-
-    // public static int[][] toIntMatrix(double[][] matrix) {
-    //     int[][] intMatrix = new int[matrix.length][matrix.length];
-    //     for(int i = 0; i < matrix.length; i++) {
-    //         for(int j = 0 ; j<matrix.length; j++) {
-    //             intMatrix[i][j] = (int) Math.round(matrix[i][j]);
-    //         }
-    //     }
-    //     return intMatrix;
-    // }
 
     public static int totalSum(int[][] matrix) {
         int totalSum = 0;
-        for(int i = 0 ; i < matrix.length ; i++) {
-            for(int j = 0 ; j < matrix.length ; j++) {
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix.length; j++) {
                 totalSum += matrix[i][j];
             }
         }
@@ -170,16 +158,15 @@ public class Enumeration {
 
     public static List<int[]> exclusionsListFromHungarian(int[] assignments) {
         List<int[]> returningList = new ArrayList<>();
-        for(int i= 0; i <assignments.length;i++) {
+        for (int i = 0; i < assignments.length; i++) {
             returningList.add(new int[]{i, assignments[i]});
         }
         return returningList;
-    } 
+    }
 
     /*
      * Method to get the top k paths.
      */
-
     public static List<AssignmentResult> getTopKMurtys(int[][] costMatrix, int k) {
         List<AssignmentResult> results = new ArrayList<>();
         PriorityQueue<MurtyNode> pq = new PriorityQueue<>();
@@ -198,7 +185,7 @@ public class Enumeration {
         while (!pq.isEmpty() && results.size() < k) {
             MurtyNode current = pq.poll();
             results.add(current.result);
-            
+
             List<Integer> currentAssignment = current.result.assignments;
             int n = currentAssignment.size();
 
@@ -221,7 +208,7 @@ public class Enumeration {
 
                 // Modify cost matrix
                 int[][] modifiedMatrix = finalCostMatrixAfterExclusionsAndInclusions(
-                    costMatrix, newExclusions, newInclusions, true
+                        costMatrix, newExclusions, newInclusions, true
                 );
 
                 // Solve subproblem
@@ -243,17 +230,6 @@ public class Enumeration {
 
         return results;
     }
-    // public static void main(String[] args) {
-    //    int[][] costMatrix = generateMatrix(10, 1000, 9999);
-    //     List<AssignmentResult> results = getTopKMurtys(costMatrix, 3700000);
-
-    //     List<AssignmentResult> bruteResults = generateAllAssignments(costMatrix);
-    //     System.out.println("Comparison: ");
-    //     boolean match = compareMethods(results, bruteResults);
-    // }   
-
-    
-    //Helper methods below, to print, and other stuffs.
 
     public static boolean compareMethods(List<AssignmentResult> murty, List<AssignmentResult> bruteForce) {
         if (murty.size() != bruteForce.size()) {
@@ -261,12 +237,12 @@ public class Enumeration {
             System.out.println("Murty: " + murty.size() + ", Brute Force: " + bruteForce.size());
             return false;
         }
-        
+
         boolean allMatch = true;
         for (int i = 0; i < murty.size(); i++) {
             double murtysCost = murty.get(i).totalCost;
             double bruteForceCost = bruteForce.get(i).totalCost;
-            
+
             if (Math.abs(murtysCost - bruteForceCost) > 0.001) {
                 System.out.println("Cost mismatch at position " + i);
                 System.out.println("Murty: " + murty.get(i).assignments + " cost=" + murtysCost);
@@ -274,18 +250,19 @@ public class Enumeration {
                 allMatch = false;
             }
         }
-        
+
         if (allMatch) {
             System.out.println("All results match between Murty and Brute Force");
         }
-        
+
         return allMatch;
     }
+
     public static int[][] generateMatrix(int size, int min, int max) {
         Random rand = new Random();
         int[][] returnMatrix = new int[size][size];
-        for(int i = 0 ; i < size; i++) {
-            for(int j = 0 ; j < size; j++) {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
                 returnMatrix[i][j] = rand.nextInt(max - min + 1) + min;
             }
         }
@@ -293,13 +270,13 @@ public class Enumeration {
     }
 
     public static void printMatrix(int[][] matrix) {
-        for(int i = 0 ; i < matrix.length;i++) {
+        for (int i = 0; i < matrix.length; i++) {
             System.out.print("[");
-            for(int j = 0 ; j < matrix[0].length; j++) {
-                System.out.print(matrix[i][j] + " ") ;
+            for (int j = 0; j < matrix[0].length; j++) {
+                System.out.print(matrix[i][j] + " ");
             }
             System.out.print("\b]");
-            System.out.println("");
+            System.out.println();
         }
     }
 
@@ -313,19 +290,17 @@ public class Enumeration {
 
     public static double calculateCost(int[][] matrix, int[] assignment) {
         double cost = 0;
-        for(int i=0;i < assignment.length; i++) {
+        for (int i = 0; i < assignment.length; i++) {
             cost += matrix[i][assignment[i]];
         }
         return cost;
     }
 
     public static String toStringList(List<int[]> list) {
-    StringBuilder sb = new StringBuilder();
-    for (int[] arr : list) {
-        sb.append("(").append(arr[0]).append(",").append(arr[1]).append(") ");
+        StringBuilder sb = new StringBuilder();
+        for (int[] arr : list) {
+            sb.append("(").append(arr[0]).append(",").append(arr[1]).append(") ");
+        }
+        return sb.toString().trim();
     }
-    return sb.toString().trim();
 }
-}
-
-
