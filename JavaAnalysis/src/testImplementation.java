@@ -1,32 +1,28 @@
 import java.util.*;
 
-public class testImplementation{
+public class testImplementation {
     public static void main(String[] args) {
-        int D = 10;
-        int[][] matrix = {
-            {  1,   5,   9,  D,   D,   D }, 
-            {  6,   2,   8,  D,   D,   D },
-            {  33,   45,   21,  D,   D,   D},
-            {  D,   D,   D,  0,   0,   0 },
-            {  D,   D,   D,  0,   0,   0 }, 
-            {  D,   D,   D,  0,   0,   0 } 
+        int[][] costMatrix = {
+            {1, 5, 9},
+            {6, 2, 8},
+            {15, 18, 21}
         };
 
-        // Step 3: Print expanded matrix
-        System.out.println("Cost Matrix:");
-        for (int[] row : matrix) {
-            System.out.println(Arrays.toString(row));
+        AssignmentBreakdown result = MatrixPreProcessor.runHungarianAndClassify(costMatrix);
+
+        System.out.println("True Matches:");
+        for (int[] match : result.trueMatches) {
+            System.out.println("GT_" + (match[0]) + "-> Pred_" + match[1]);
         }
 
-        hungarianAlgo hungarian = new hungarianAlgo();
-        int[] assignment = hungarian.solveHungarian(matrix);
-
-        System.out.println("\nAssignments:");
-        double totalCost = 0;
-        for (int i = 0; i < assignment.length; i++) {
-            System.out.printf("Row %d → Col %d | Cost: %d%n", i, assignment[i], matrix[i][assignment[i]]);
-            totalCost += matrix[i][assignment[i]];
+        System.out.println("\nFalse Positives (Predicted matched to dummy GT):");
+        for (int[] pair : result.falsePositives) {
+            System.out.println("Pred_" + pair[0] + " → D_GT_" + pair[1]);
         }
-        System.out.println("Total Cost: " + totalCost);
+
+        System.out.println("\nFalse Negatives (GT matched to dummy Prediction):");
+        for (int[] pair : result.falseNegatives) {
+            System.out.println("GT_" + pair[0] + " → D_Pred_" + pair[1]);
+        }
     }
 }
