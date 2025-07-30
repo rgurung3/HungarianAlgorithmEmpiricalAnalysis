@@ -1,50 +1,79 @@
-import java.util.Arrays;
+import java.util.*;
 
-class MatrixPreProcessor{
-    public static int[][] addDummies(int[][] matrix, int dummyCost) {
-        int n = matrix.length;
-        int size = n * 2;
+public class MatrixPreProcessor {
+
+    public  AssignmentBreakdown runHungarianAndClassify(int[][] originalMatrix) {
+        int m = originalMatrix.length;
+        int n = originalMatrix[0].length;
+        int size = m + n;
+//        int dummyCost = totalSum(originalMatrix);
+
+        int[][] expanded = addDummies(originalMatrix, 10);
+
+        System.out.println("Expanded Cost Matrix:");
+        for (int[] row : expanded) {
+            System.out.println(Arrays.toString(row));
+        }
+        System.out.println("Running hungarian here.");
+        int[] assignment = hungarianAlgo.solveHungarian(expanded);
+
+        AssignmentBreakdown result = new AssignmentBreakdown();
+
+        for (int i = 0; i < size; i++) {
+            int j = assignment[i];
+
+            if (i < m && j < n) {
+                // GT_i matched to Pred_j
+                result.trueMatches.add(new int[]{i, j});
+            }
+            else if (i < m && j >= n) {
+                // GT_i matched to dummy prediction → FN
+                result.falseNegatives.add(new int[]{i, j - n});
+            }
+            else if (i >= m && j < n) {
+                // Pred_j matched to dummy GT -> FP
+                result.falsePositives.add(new int[]{j, i - m});
+            }
+           
+        }
+
+        return result;
+    }
+
+    public int[][] addDummies(int[][] matrix, int dummyCost) {
+        int m = matrix.length;         
+        int n = matrix[0].length; 
+        int size = m + n;
         int[][] newMatrix = new int[size][size];
+        int INF = totalSum(matrix) + 1;
 
-        for(int i = 0 ; i < size ; i ++) {
-            for(int j = 0 ; j < size ; j++) {
-                if(i < n && j < n) {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (i < m && j < n) {
+                    // Top-left: original cost matrix
                     newMatrix[i][j] = matrix[i][j];
-                }
-                else if((i > n -1 && j > n -1)) {
+                } else if (i < m && j >= n) {
+                    // Top-right: GT_i to dummy predicted tracks
+                    newMatrix[i][j] = (j - n == i) ? dummyCost : INF;
+                } else if (i >= m && j < n) {
+                    // Bottom-left: dummy GTs to predicted tracks
+                    newMatrix[i][j] = (i - m == j) ? dummyCost : INF;
+                } else {
+                    // Bottom-right: dummy-to-dummy
                     newMatrix[i][j] = 0;
-                }
-                else{
-                    newMatrix[i][j] = dummyCost;
                 }
             }
         }
 
         return newMatrix;
     }
-
-    public static int totalSum(int[][] costMatrix) {
-        int total = 0;
-        for(int i = 0 ; i < costMatrix.length; i ++) {
-            for(int j = 0 ; j < costMatrix.length ; j++) {
-                total += costMatrix[i][j];
+    public  int totalSum(int[][] matrix) {
+        int sum = 0;
+        for (int[] row : matrix) {
+            for (int val : row) {
+                sum += val;
             }
         }
-        return total + 1;
-    }
-
-    public static void main(String[] args) {
-        int[][] matrix = {
-            {   1,    6,    9,   10 }, 
-            {   5,    2,    4,   11 }, 
-            {   9,    8,    3,   12 }, 
-            {  15,   14,   13,    1 }  
-        };
-        int sumPlusOne = totalSum(matrix);
-        int[][] modifiedMatrix = addDummies(matrix, sumPlusOne);
-        
-        for(int[] row: modifiedMatrix) {
-            System.out.println(Arrays.toString(row));
-        }
+        return sum + 1;
     }
 }
