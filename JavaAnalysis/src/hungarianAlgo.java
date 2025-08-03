@@ -1,7 +1,9 @@
 import java.util.*;
 
 public class hungarianAlgo {
-
+    public static int callCount = 0;
+    public static long totalTime = 0;
+    
     public static void printMatrix(int[][] costs, int[] rowPrices, int[] colPrices) {
         int size = costs.length;
         System.out.println("=====");
@@ -21,6 +23,8 @@ public class hungarianAlgo {
      * Note that arrays are 1-index for the algorithm.
      */
     public static int[] solveHungarian(int[][] costs) {
+        long start = System.nanoTime();
+        callCount++;
         int size = costs.length;
         int[][] costsCopy = deepCopy(costs);
 
@@ -41,6 +45,8 @@ public class hungarianAlgo {
         for (int column = 1; column <= size; column++) {
             assignment[columnToRow[column] - 1] = column - 1;
         }
+
+        totalTime += (System.nanoTime() - start);
         return assignment;
     }
 
