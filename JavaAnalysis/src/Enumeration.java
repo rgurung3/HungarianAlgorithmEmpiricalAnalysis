@@ -126,7 +126,7 @@ public class Enumeration {
     }
 
     private static int[][] deepCopy(int[][] original) {
-        int[][] copy = new int[original.length][original[0].length];
+        int[][] copy = new int[original.length][];
         for (int i = 0; i < original.length; i++)
             copy[i] = original[i].clone();
         return copy;
