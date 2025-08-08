@@ -23,7 +23,7 @@ public class Enumeration {
                                              int[][] costMatrix, List<AssignmentResult> results) {
         int numTasks = costMatrix.length;
         if (rowIndex == numTasks) {
-            double totalCost = 0;
+            int totalCost = 0;
             for (int row = 0; row < numTasks; row++) {
                 int col = currentAssignment.get(row);
                 totalCost += costMatrix[row][col];
@@ -175,7 +175,7 @@ public class Enumeration {
         if (baseAssign == null) return results;
 
         List<Integer> baseList = toList(baseAssign);
-        double baseCost = calculateCost(costMatrix, baseAssign);
+        int baseCost = calculateCost(costMatrix, baseAssign);
         AssignmentResult baseResult = new AssignmentResult(baseList, baseCost);
 
         pq.offer(new MurtyNode(baseResult, new ArrayList<>(), new ArrayList<>()));
@@ -216,13 +216,13 @@ public class Enumeration {
                 if (newAssignment == null) continue;
 
                 // Check if the solution is infeasible based on modified cost
-                double modCost = calculateCost(modifiedMatrix, newAssignment);
+                int modCost = calculateCost(modifiedMatrix, newAssignment);
                 if (modCost >= infeasibleThreshold) {
                     continue;
                 }
 
                 // Calculate actual cost and add to queue
-                double actualCost = calculateCost(costMatrix, newAssignment);
+                int actualCost = calculateCost(costMatrix, newAssignment);
                 AssignmentResult newResult = new AssignmentResult(toList(newAssignment), actualCost);
                 pq.offer(new MurtyNode(newResult, newExclusions, newInclusions));
             }
@@ -240,10 +240,10 @@ public class Enumeration {
 
         boolean allMatch = true;
         for (int i = 0; i < murty.size(); i++) {
-            double murtysCost = murty.get(i).totalCost;
-            double bruteForceCost = bruteForce.get(i).totalCost;
+            int murtysCost = murty.get(i).totalCost;
+            int bruteForceCost = bruteForce.get(i).totalCost;
 
-            if (Math.abs(murtysCost - bruteForceCost) > 0.001) {
+            if (murtysCost != bruteForceCost) {
                 System.out.println("Cost mismatch at position " + i);
                 System.out.println("Murty: " + murty.get(i).assignments + " cost=" + murtysCost);
                 System.out.println("Brute: " + bruteForce.get(i).assignments + " cost=" + bruteForceCost);
@@ -288,8 +288,8 @@ public class Enumeration {
         return list;
     }
 
-    public static double calculateCost(int[][] matrix, int[] assignment) {
-        double cost = 0;
+    public static int calculateCost(int[][] matrix, int[] assignment) {
+        int cost = 0;
         for (int i = 0; i < assignment.length; i++) {
             cost += matrix[i][assignment[i]];
         }

@@ -13,6 +13,6 @@ public class MurtyNode implements Comparable<MurtyNode> {
 
     @Override
     public int compareTo(MurtyNode other) {
-        return Double.compare(this.result.totalCost, other.result.totalCost);
+        return Integer.compare(this.result.totalCost, other.result.totalCost);
     }
 }
