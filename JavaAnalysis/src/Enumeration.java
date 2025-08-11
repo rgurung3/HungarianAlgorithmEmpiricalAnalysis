@@ -15,7 +15,7 @@ public class Enumeration {
         List<AssignmentResult> allResults = new ArrayList<>();
         generatePermutations(initialAssignment, 0, costMatrix, allResults);
 
-        allResults.sort(Comparator.comparingDouble(a -> a.totalCost));
+        allResults.sort(Comparator.comparingInt(a -> a.totalCost));
         return allResults;
     }
 
