@@ -15,17 +15,9 @@ public class AssignmentSolution {
     public List<int[]> falsePositives;
     public List<int[]> falseNegatives;
 
-    /*
-    public AssignmentSolution(List<Integer> assignment, int cost) {
-        this.assignment = assignment;
-        this.cost = cost;
-        this.modelFailures = false;
-    }
-    */
-
     public AssignmentSolution(int[] assignment, int cost) {
-        //this.assignment = asList(assignment);
-        this.assignment = assignment.clone();
+        //this.assignment = assignment.clone();
+        this.assignment = assignment;
         this.cost = cost;
         this.modelFailures = false;
     }

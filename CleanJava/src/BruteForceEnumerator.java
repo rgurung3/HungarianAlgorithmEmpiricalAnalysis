@@ -33,7 +33,7 @@ public class BruteForceEnumerator {
                 int col = currentAssignment[row];
                 totalCost += costMatrix[row][col];
             }
-            solutions.add(new AssignmentSolution(currentAssignment, totalCost));
+            solutions.add(new AssignmentSolution(currentAssignment.clone(), totalCost));
         } else {
             for (int i = rowIndex; i < numTasks; i++) {
                 swap(currentAssignment, rowIndex, i);

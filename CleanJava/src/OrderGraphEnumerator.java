@@ -103,13 +103,11 @@ public class OrderGraphEnumerator {
      */
     AssignmentSolution callHungarian(int[][] matrix) {
         long startTime = System.nanoTime();
-        int[] assignment = Hungarian.solveHungarian(matrix);
+        AssignmentSolution solution = Hungarian.solve(matrix);
         long endTime = System.nanoTime();
         this.totalCalls += 1;
         this.totalTime += endTime-startTime;
 
-        int cost = AssignmentProblem.cost(matrix,assignment);
-        AssignmentSolution solution = new AssignmentSolution(assignment,cost);
         return solution;
     }
 

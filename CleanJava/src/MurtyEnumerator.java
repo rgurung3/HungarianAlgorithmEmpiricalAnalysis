@@ -80,8 +80,8 @@ public class MurtyEnumerator {
 
                 // Calculate actual cost and add to queue
                 int actualCost = AssignmentProblem.cost(costMatrix, solution.assignment);
-                AssignmentSolution newSolution = new AssignmentSolution(solution.assignment, actualCost);
-                pq.offer(new MurtyNode(newSolution, newExclusions, newInclusions));
+                solution.cost = actualCost;
+                pq.offer(new MurtyNode(solution, newExclusions, newInclusions));
             }
         }
 
@@ -133,13 +133,11 @@ public class MurtyEnumerator {
      */
     AssignmentSolution callHungarian(int[][] matrix) {
         long startTime = System.nanoTime();
-        int[] assignment = Hungarian.solveHungarian(matrix);
+        AssignmentSolution solution = Hungarian.solve(matrix);
         long endTime = System.nanoTime();
         this.totalCalls += 1;
         this.totalTime += endTime-startTime;
 
-        int cost = AssignmentProblem.cost(matrix,assignment);
-        AssignmentSolution solution = new AssignmentSolution(assignment,cost);
         return solution;
     }
 

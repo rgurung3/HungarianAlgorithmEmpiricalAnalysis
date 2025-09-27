@@ -8,14 +8,26 @@ import java.util.Arrays;
 public class Hungarian {
     AssignmentProblem problem;
 
+    // reusable data structures
+    boolean[] visitedColumn;
+    int[] distanceToColumn;
+
     public Hungarian(AssignmentProblem problem) {
         this.problem = problem;
+        this.visitedColumn = new boolean[problem.numRows + 1];
+        this.distanceToColumn = new int[problem.numRows + 1];
     }
 
     public AssignmentSolution solve() {
-        int[] assignment = Hungarian.solveHungarian(this.problem.costMatrix);
+        int[] assignment = solveHungarian(this.problem.costMatrix);
         int cost = AssignmentProblem.cost(this.problem.costMatrix,assignment);
         return new AssignmentSolution(assignment,cost);
+    }
+
+    public static AssignmentSolution solve(int[][] matrix) {
+        AssignmentProblem problem = new AssignmentProblem(matrix);
+        Hungarian h = new Hungarian(problem);
+        return h.solve();
     }
 
     /**
@@ -24,7 +36,7 @@ public class Hungarian {
      *
      * Note that arrays are 1-index for the algorithm.
      */
-    protected static int[] solveHungarian(int[][] costs) {
+    protected int[] solveHungarian(int[][] costs) {
         int size = costs.length;
         int[][] costsCopy = deepCopy(costs);
 
@@ -56,15 +68,14 @@ public class Hungarian {
      * @param columnToRow Mapping from column to its matched row.
      * @param columnToLastColumn Mapping from column to the previous column used to reach it.
      */
-    private static void solveNext(int initialRow, 
-                                  int[][] costs, int[] rowPrices, int[] colPrices,
-                                  int[] columnToRow, int[] columnToLastColumn) {
+    private void solveNext(int initialRow, 
+                           int[][] costs, int[] rowPrices, int[] colPrices,
+                           int[] columnToRow, int[] columnToLastColumn) {
 
         int size = costs.length;
 
         // for Dijkstra's algorithm
-        boolean[] visitedColumn = new boolean[size + 1];
-        int[] distanceToColumn = new int[size + 1];
+        Arrays.fill(visitedColumn, false);
         Arrays.fill(distanceToColumn, Integer.MAX_VALUE);
 
         // the graph is a bipartite graph of row nodes and column nodes.
@@ -134,7 +145,7 @@ public class Hungarian {
      * @param columnToRow Map from column to the matching row.
      * @param columnToLastColumn Map from column to the last column on the augmenting path.
      */
-    private static void updateMatching(int column, int[] columnToRow, int[] columnToLastColumn) {
+    private void updateMatching(int column, int[] columnToRow, int[] columnToLastColumn) {
         // columnToLastColumn has the sequence of columns on the
         // shortest path starting from the initial column 0, to the
         // unmatched column which is input.  This sequence of edges is 
@@ -153,7 +164,7 @@ public class Hungarian {
      * @param original The original matrix.
      * @return A deep copy of the original matrix.
      */
-    private static int[][] deepCopy(int[][] original) {
+    private int[][] deepCopy(int[][] original) { //AC: replace
         int[][] copy = new int[original.length][];
         for (int i = 0; i < original.length; i++)
             copy[i] = original[i].clone();
