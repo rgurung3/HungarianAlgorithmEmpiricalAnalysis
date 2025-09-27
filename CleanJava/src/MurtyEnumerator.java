@@ -49,8 +49,8 @@ public class MurtyEnumerator {
             node = pq.poll();
             topK.add(node.solution);
 
-            List<Integer> currentAssignment = node.solution.assignment;
-            int n = currentAssignment.size();
+            int[] currentAssignment = node.solution.assignment;
+            int n = currentAssignment.length;
 
             // Find the first position that's not already forced by inclusions
             int startPos = 0;
@@ -62,11 +62,11 @@ public class MurtyEnumerator {
                 // Build new inclusions: force all assignments from startPos to i-1
                 List<int[]> newInclusions = new ArrayList<>(node.inclusions);
                 for (int j = startPos; j < i; j++)
-                    newInclusions.add(new int[]{j, currentAssignment.get(j)});
+                    newInclusions.add(new int[]{j, currentAssignment[j]});
 
                 // Add exclusion at position i
                 List<int[]> newExclusions = new ArrayList<>(node.exclusions);
-                newExclusions.add(new int[]{i, currentAssignment.get(i)});
+                newExclusions.add(new int[]{i, currentAssignment[i]});
 
                 // Modify cost matrix
                 int[][] modifiedMatrix = enforceConstraints(newExclusions, newInclusions);

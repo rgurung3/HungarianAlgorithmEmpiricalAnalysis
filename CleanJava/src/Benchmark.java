@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -36,7 +37,7 @@ class Benchmark {
         if (k<=100) {
             int i = 1;
             for (AssignmentSolution sol : solutions) {
-                System.out.printf("(%d,%d,%s)\n", i++, sol.cost, sol.assignment.toString());
+                System.out.printf("(%d,%d,%s)\n", i++, sol.cost, Arrays.toString(sol.assignment));
             }
 
         } else if (k<=1000) {
@@ -52,6 +53,8 @@ class Benchmark {
     public static void main(String[] args) {
         test(0,10,100);
         test(0,10,1000);
-        test(0,10,3628800);
+        test(0,10,10000);
+        test(0,10,100000);
+        //test(0,10,3628800);
     }
 }

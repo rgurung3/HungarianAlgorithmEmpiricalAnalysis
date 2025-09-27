@@ -296,7 +296,7 @@ public class OrderGraphEnumerator {
  */
 class OrderGraphNode implements Comparable<OrderGraphNode> {
     int cost;
-    List<Integer> path;
+    List<Integer> path; //AC: to array?
     int length;
 
     public OrderGraphNode(int cost, List<Integer> path) {
@@ -331,7 +331,9 @@ class OrderGraphNode implements Comparable<OrderGraphNode> {
     }
 
     public AssignmentSolution solution() {
-        List<Integer> path = new ArrayList<Integer>(this.path);
+        int[] path = new int[this.path.size()];
+        for (int i = 0; i < this.path.size(); i++)
+            path[i] = this.path.get(i);
         int cost = this.cost;
         return new AssignmentSolution(path,cost);
 

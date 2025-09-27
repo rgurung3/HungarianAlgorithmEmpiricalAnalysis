@@ -6,7 +6,8 @@ import java.util.List;
  *
  */
 public class AssignmentSolution {
-    public List<Integer> assignment;
+    //public List<Integer> assignment;
+    public int[] assignment;
     public int cost;
 
     boolean modelFailures;
@@ -14,23 +15,26 @@ public class AssignmentSolution {
     public List<int[]> falsePositives;
     public List<int[]> falseNegatives;
 
+    /*
     public AssignmentSolution(List<Integer> assignment, int cost) {
         this.assignment = assignment;
         this.cost = cost;
         this.modelFailures = false;
     }
+    */
 
     public AssignmentSolution(int[] assignment, int cost) {
-        this.assignment = asList(assignment);
+        //this.assignment = asList(assignment);
+        this.assignment = assignment.clone();
         this.cost = cost;
         this.modelFailures = false;
     }
 
-    public AssignmentSolution(List<Integer> assignment, int cost,
+    public AssignmentSolution(int[] assignment, int cost,
                               List<int[]> matches,
                               List<int[]> falsePositives,
                               List<int[]> falseNegatives) {
-        this.assignment = assignment;
+        this.assignment = assignment.clone();
         this.cost = cost;
         this.modelFailures = true;
         this.matches = matches;
@@ -44,7 +48,7 @@ public class AssignmentSolution {
     }
 
     public String toString() {
-        return String.format("%.4f: %s", this.cost, this.assignment);
+        return String.format("%.4f: %s", this.cost, java.util.Arrays.toString(this.assignment));
     }
 
     static List<Integer> asList(int[] array) {
@@ -62,8 +66,8 @@ public class AssignmentSolution {
         List<int[]> falsePositives = new ArrayList<>();
         List<int[]> falseNegatives = new ArrayList<>();
         
-        for (int i = 0; i < this.assignment.size(); i++) {
-            int j = this.assignment.get(i);
+        for (int i = 0; i < this.assignment.length; i++) {
+            int j = this.assignment[i];
 
             if (i < problem.numRows && j < problem.numCols) // true positive
                 matches.add(new int[]{i, j});
