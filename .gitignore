@@ -1,1 +1,4 @@
-<use the .gitignore above>
+*.class
+*.log
+*.txt
+*.csv
