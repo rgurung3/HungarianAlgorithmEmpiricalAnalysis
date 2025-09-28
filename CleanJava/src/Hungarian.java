@@ -8,14 +8,27 @@ import java.util.Arrays;
 public class Hungarian {
     AssignmentProblem problem;
 
-    // reusable data structures
+    // reusable data structures (per call)
+    // for modifying costs
+    int[] rowPrices;
+    int[] colPrices;
+    // for Dijkstra's algorithm
+    int[] columnToRow;
+    int[] columnToLastColumn;
+
+    // reusable data structures (per iteration)
     boolean[] visitedColumn;
     int[] distanceToColumn;
 
     public Hungarian(AssignmentProblem problem) {
         this.problem = problem;
-        this.visitedColumn = new boolean[problem.numRows + 1];
-        this.distanceToColumn = new int[problem.numRows + 1];
+
+        this.rowPrices = new int[problem.numRows + 1];
+        this.colPrices = new int[problem.numCols + 1];
+        this.columnToRow = new int[problem.numCols + 1];
+        this.columnToLastColumn = new int[problem.numCols + 1];
+        this.visitedColumn = new boolean[problem.numCols + 1];
+        this.distanceToColumn = new int[problem.numCols + 1];
     }
 
     public AssignmentSolution solve() {
@@ -24,7 +37,13 @@ public class Hungarian {
         return new AssignmentSolution(assignment,cost);
     }
 
-    public static AssignmentSolution solve(int[][] matrix) {
+    public AssignmentSolution solve(int[][] matrix) {
+        int[] assignment = solveHungarian(matrix);
+        int cost = AssignmentProblem.cost(matrix,assignment);
+        return new AssignmentSolution(assignment,cost);
+    }
+
+    public static AssignmentSolution solve_alone(int[][] matrix) {
         AssignmentProblem problem = new AssignmentProblem(matrix);
         Hungarian h = new Hungarian(problem);
         return h.solve();
@@ -38,18 +57,15 @@ public class Hungarian {
      */
     protected int[] solveHungarian(int[][] costs) {
         int size = costs.length;
-        int[][] costsCopy = deepCopy(costs);
 
-        // for modifying costs
-        int[] rowPrices = new int[size + 1];
-        int[] colPrices = new int[size + 1];
-        // for Dijkstra's algorithm
-        int[] columnToRow = new int[size + 1];
-        int[] columnToLastColumn = new int[size + 1];
+        Arrays.fill(rowPrices, 0);
+        Arrays.fill(colPrices, 0);
+        Arrays.fill(columnToRow, 0);
+        Arrays.fill(columnToLastColumn, 0);
 
         for (int row = 1; row <= size; row++) {
             // run Dijkstra's algorithm for the next row
-            solveNext(row, costsCopy, rowPrices, colPrices, columnToRow, columnToLastColumn);
+            solveNext(row, costs, rowPrices, colPrices, columnToRow, columnToLastColumn);
         }
 
         // return assignment as 0-indexed
@@ -157,18 +173,4 @@ public class Hungarian {
             column = lastColumn;
         } while (column != 0);
     }
-
-    /**
-     * Creates a deep copy of a 2D matrix.
-     *
-     * @param original The original matrix.
-     * @return A deep copy of the original matrix.
-     */
-    private int[][] deepCopy(int[][] original) { //AC: replace
-        int[][] copy = new int[original.length][];
-        for (int i = 0; i < original.length; i++)
-            copy[i] = original[i].clone();
-        return copy;
-    }
-
 }
