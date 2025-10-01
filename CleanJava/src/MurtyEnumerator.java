@@ -9,6 +9,9 @@ import java.util.PriorityQueue;
  */
 public class MurtyEnumerator {
     AssignmentProblem problem;
+    Hungarian hungarian;
+    // reusable space for cost matrix
+    int[][] scratchMatrix;
 
     // stats for algorithm performance
     int cacheHits;
@@ -22,6 +25,8 @@ public class MurtyEnumerator {
      */
     public MurtyEnumerator(AssignmentProblem problem) {
         this.problem = problem;
+        this.hungarian  = new Hungarian(problem);
+        this.scratchMatrix = new int[problem.numRows][problem.numCols];
     }
 
     /**
@@ -49,8 +54,8 @@ public class MurtyEnumerator {
             node = pq.poll();
             topK.add(node.solution);
 
-            List<Integer> currentAssignment = node.solution.assignment;
-            int n = currentAssignment.size();
+            int[] currentAssignment = node.solution.assignment;
+            int n = currentAssignment.length;
 
             // Find the first position that's not already forced by inclusions
             int startPos = 0;
@@ -62,11 +67,11 @@ public class MurtyEnumerator {
                 // Build new inclusions: force all assignments from startPos to i-1
                 List<int[]> newInclusions = new ArrayList<>(node.inclusions);
                 for (int j = startPos; j < i; j++)
-                    newInclusions.add(new int[]{j, currentAssignment.get(j)});
+                    newInclusions.add(new int[]{j, currentAssignment[j]});
 
                 // Add exclusion at position i
                 List<int[]> newExclusions = new ArrayList<>(node.exclusions);
-                newExclusions.add(new int[]{i, currentAssignment.get(i)});
+                newExclusions.add(new int[]{i, currentAssignment[i]});
 
                 // Modify cost matrix
                 int[][] modifiedMatrix = enforceConstraints(newExclusions, newInclusions);
@@ -80,8 +85,8 @@ public class MurtyEnumerator {
 
                 // Calculate actual cost and add to queue
                 int actualCost = AssignmentProblem.cost(costMatrix, solution.assignment);
-                AssignmentSolution newSolution = new AssignmentSolution(solution.assignment, actualCost);
-                pq.offer(new MurtyNode(newSolution, newExclusions, newInclusions));
+                solution.cost = actualCost;
+                pq.offer(new MurtyNode(solution, newExclusions, newInclusions));
             }
         }
 
@@ -97,9 +102,9 @@ public class MurtyEnumerator {
      * 
      */
     public int[][] enforceConstraints(List<int[]> exclusions, List<int[]> inclusions) {
-        int[][] matrix = this.problem.costMatrix;
-        int n = matrix.length;
-        int[][] enforced = deepCopy(matrix);
+        int n = this.problem.numRows;
+        int m = this.problem.numCols;
+        int[][] enforced = copyMatrix(this.problem.costMatrix);
 
         for (int[] pair : inclusions) {
             int row = pair[0];
@@ -107,7 +112,7 @@ public class MurtyEnumerator {
             enforced[row][col] = 0;
 
             // Block all other cells in this row
-            for (int j = 0; j < n; j++)
+            for (int j = 0; j < m; j++)
                 if (j != col)
                     enforced[row][j] = this.problem.infinity;
 
@@ -133,21 +138,20 @@ public class MurtyEnumerator {
      */
     AssignmentSolution callHungarian(int[][] matrix) {
         long startTime = System.nanoTime();
-        int[] assignment = Hungarian.solveHungarian(matrix);
+        AssignmentSolution solution = this.hungarian.solve(matrix);
         long endTime = System.nanoTime();
         this.totalCalls += 1;
         this.totalTime += endTime-startTime;
 
-        int cost = AssignmentProblem.cost(matrix,assignment);
-        AssignmentSolution solution = new AssignmentSolution(assignment,cost);
         return solution;
     }
 
-    static int[][] deepCopy(int[][] original) {
-        int[][] copy = new int[original.length][];
-        for (int i = 0; i < original.length; i++)
-            copy[i] = original[i].clone();
-        return copy;
+    int[][] copyMatrix(int[][] matrix) {
+        int n = this.problem.numRows;
+        int m = this.problem.numCols;
+        for (int i = 0; i < n; i++)
+            System.arraycopy(matrix[i],0,this.scratchMatrix[i],0,m);
+        return this.scratchMatrix;
     }
 
     public void printCacheStats() {
