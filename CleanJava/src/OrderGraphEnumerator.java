@@ -156,10 +156,10 @@ public class OrderGraphEnumerator {
     }
 
     public static void main(String[] args) {
-        int n = 10;
-        int k = 3628800;
-        //int n = 40;
-        //int k = 10000;
+        //int n = 10;
+        //int k = 3628800;
+        int n = 40;
+        int k = 10000;
         int bound = 10;
         int seed = 0;
 
