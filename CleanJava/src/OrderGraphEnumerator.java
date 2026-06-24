@@ -3,6 +3,7 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Random;
 
 
 /**
@@ -155,121 +156,67 @@ public class OrderGraphEnumerator {
     }
 
     public static void main(String[] args) {
-        /*
-        int[][] costMatrix = new int[][] {
-            {1, 5, 9},
-            {6, 2, 8},
-            {7, 4, 3}
-        };
-        int k = 6;
-        */
-
-        /*
-        int[][] costMatrix = new int[][] {
-            {5,0,3,3,7,9,3,5},
-            {2,4,7,6,8,8,1,6},
-            {7,7,8,1,5,9,8,9},
-            {4,3,0,3,5,0,2,3},
-            {8,1,3,3,3,7,0,1},
-            {9,9,0,4,7,3,2,7},
-            {2,0,0,4,5,5,6,8},
-            {4,1,4,9,8,1,1,7}};
-        int k = 40320;
-        */
-
-        /*
-        int[][] costMatrix = new int[][] {
-            {5,0,3,3,7,9,3,5,2},
-            {4,7,6,8,8,1,6,7,7},
-            {8,1,5,9,8,9,4,3,0},
-            {3,5,0,2,3,8,1,3,3},
-            {3,7,0,1,9,9,0,4,7},
-            {3,2,7,2,0,0,4,5,5},
-            {6,8,4,1,4,9,8,1,1},
-            {7,9,9,3,6,7,2,0,3},
-            {5,9,4,4,6,4,4,3,4}};
-        int k = 362880;
-        */
-
-        /*
-        int[][] costMatrix = new int[][] {
-            {5,0,3,3,7,9,3,5,2,4},
-            {7,6,8,8,1,6,7,7,8,1},
-            {5,9,8,9,4,3,0,3,5,0},
-            {2,3,8,1,3,3,3,7,0,1},
-            {9,9,0,4,7,3,2,7,2,0},
-            {0,4,5,5,6,8,4,1,4,9},
-            {8,1,1,7,9,9,3,6,7,2},
-            {0,3,5,9,4,4,6,4,4,3},
-            {4,4,8,4,3,7,5,5,0,1},
-            {5,9,3,0,5,0,1,2,4,2}};
+        int n = 10;
         int k = 3628800;
-        */
+        //int n = 40;
+        //int k = 10000;
+        int bound = 10;
+        int seed = 0;
 
-        int[][] costMatrix = new int[][] {
-            {5,0,3,3,7,9,3,5,2,4,7,6,8,8,1,6,7,7,8,1},
-            {5,9,8,9,4,3,0,3,5,0,2,3,8,1,3,3,3,7,0,1},
-            {9,9,0,4,7,3,2,7,2,0,0,4,5,5,6,8,4,1,4,9},
-            {8,1,1,7,9,9,3,6,7,2,0,3,5,9,4,4,6,4,4,3},
-            {4,4,8,4,3,7,5,5,0,1,5,9,3,0,5,0,1,2,4,2},
-            {0,3,2,0,7,5,9,0,2,7,2,9,2,3,3,2,3,4,1,2},
-            {9,1,4,6,8,2,3,0,0,6,0,6,3,3,8,8,8,2,3,2},
-            {0,8,8,3,8,2,8,4,3,0,4,3,6,9,8,0,8,5,9,0},
-            {9,6,5,3,1,8,0,4,9,6,5,7,8,8,9,2,8,6,6,9},
-            {1,6,8,8,3,2,3,6,3,6,5,7,0,8,4,6,5,8,2,3},
-            {9,7,5,3,4,5,3,3,7,9,9,9,7,3,2,3,9,7,7,5},
-            {1,2,2,8,1,5,8,4,0,2,5,5,0,8,1,1,0,3,8,8},
-            {4,4,0,9,3,7,3,2,1,1,2,1,4,2,5,5,5,2,5,7},
-            {7,6,1,6,7,2,3,1,9,5,9,9,2,0,9,1,9,0,6,0},
-            {4,8,4,3,3,8,8,7,0,3,8,7,7,1,8,4,7,0,4,9},
-            {0,6,4,2,4,6,3,3,7,8,5,0,8,5,4,7,4,1,3,3},
-            {9,2,5,2,3,5,7,2,7,1,6,5,0,0,3,1,9,9,6,6},
-            {7,8,8,7,0,8,6,8,9,8,3,6,1,7,4,9,2,0,8,2},
-            {7,8,4,4,1,7,6,9,4,1,5,9,7,1,3,5,7,3,6,6},
-            {7,9,1,9,6,0,3,8,4,1,4,5,0,3,1,4,4,4,0,0}};
-        int k = 100000;
+
+        System.out.printf("%d-x-%d matrix, k=%d, bound=%d\n", n, n, k, bound);
+
+        boolean runMurtys = true;
+
+        Random r = new Random(seed);
+        int[][] costMatrix = new int[n][n];
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                costMatrix[i][j] = r.nextInt(bound);
 
         AssignmentProblem problem = new AssignmentProblem(costMatrix);
         OrderGraphEnumerator ogEnumerator = new OrderGraphEnumerator(problem);
         MurtyEnumerator mEnumerator = new MurtyEnumerator(problem);
 
+        List<AssignmentSolution> topK = null;
+        List<AssignmentSolution> topK2 = null;
 
         //List<AssignmentSolution> topK = new ArrayList<>();
         //long start, end;
 
         System.out.println("enumerating...");
         long start = System.nanoTime();
-        List<AssignmentSolution> topK = ogEnumerator.enumerate(k);
+        topK = ogEnumerator.enumerate(k);
         long end = System.nanoTime();
         System.out.printf("timer: %.4f\n", ((end-start)*1e-9));
 
+        if (runMurtys) {
+            System.out.println("enumerating (Murty's)...");
+            start = System.nanoTime();
+            topK2 = mEnumerator.enumerate(k);
+            end = System.nanoTime();
+            System.out.printf("timer: %.4f\n", ((end-start)*1e-9));
+            System.out.printf("count: %d\n", topK.size());
+        }
 
-        System.out.println("enumerating (Murty's)...");
-        start = System.nanoTime();
-        List<AssignmentSolution> topK2 = mEnumerator.enumerate(k);
-        end = System.nanoTime();
-        System.out.printf("timer: %.4f\n", ((end-start)*1e-9));
-        System.out.printf("count: %d\n", topK.size());
-
-        // sanity check
-        boolean ok = true;
-        if (topK.size() != topK2.size())
-            System.out.println("check: NOT OK");
-        else
-            for (int i = 0; i < topK.size(); i++) {
-                AssignmentSolution r1 = topK.get(i);
-                AssignmentSolution r2 = topK2.get(i);
-                if (r1.cost != r2.cost) {
-                //if (!r1.equals(r2)) {
-                    ok = false;
-                    break;
+        if (runMurtys) {
+            // sanity check
+            boolean ok = true;
+            if (topK.size() != topK2.size())
+                System.out.println("check: NOT OK");
+            else
+                for (int i = 0; i < topK.size(); i++) {
+                    AssignmentSolution r1 = topK.get(i);
+                    AssignmentSolution r2 = topK2.get(i);
+                    if (r1.cost != r2.cost) {
+                        //if (!r1.equals(r2)) {
+                        ok = false;
+                        break;
+                    }
                 }
-            }
-
-        if (ok)
-            System.out.println("check: ok");
-        else
-            System.out.println("check: NOT OK");
+            if (ok) System.out.println("check: ok");
+            else    System.out.println("check: NOT OK");
+        }
 
         /*
         // print top-k and bottom-k solutions
@@ -284,8 +231,10 @@ public class OrderGraphEnumerator {
 
         System.out.println("== Order Graph Stats:");
         ogEnumerator.printCacheStats();
-        System.out.println("== Murty Stats:");
-        mEnumerator.printCacheStats();
+        if (runMurtys) {
+            System.out.println("== Murty Stats:");
+            mEnumerator.printCacheStats();
+        }
     }
 }
 
