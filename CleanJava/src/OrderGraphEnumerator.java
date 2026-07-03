@@ -48,8 +48,8 @@ public class OrderGraphEnumerator {
 
         // initialize priority queue
         PriorityQueue<OrderGraphNode> pq = new PriorityQueue<>();
-        List<Integer> path = new ArrayList<Integer>();
-        OrderGraphNode node = new OrderGraphNode(solution.cost,path);
+        Path path = Path.emptyPath();
+        OrderGraphNode node = new OrderGraphNode(solution.cost,path,0);
         pq.add(node);
 
         while (topK.size() < k && !pq.isEmpty()) {
@@ -63,16 +63,15 @@ public class OrderGraphEnumerator {
             }
 
             // get set of used columns
-            BitSet cols = pathToBitSet(node.path);
+            BitSet cols = node.path.toBitSet();
             // generate children: try assigning the next row
             for (int col = 0; col < this.problem.numCols; col++) {
                 // skip if column is already used
                 if (cols.get(col)) continue;
 
                 // update path to node
-                List<Integer> newPath = new ArrayList<>(node.path);
-                newPath.add(col);
-                BitSet newCols = (BitSet)cols.clone();
+                Path newPath = node.path.append(col);
+                BitSet newCols = (BitSet)cols.clone(); // AC: might not scale well
                 newCols.set(col);
 
                 // check if sub-problem has been solved before
@@ -86,10 +85,10 @@ public class OrderGraphEnumerator {
                 }
 
                 // combine cost to node and cost of node
-                int pathCost = this.problem.cost(newPath);
+                int pathCost = node.pathCost + lastCost(newPath);
                 int newCost = pathCost + solCost;
                 // push child onto pq
-                OrderGraphNode newNode = new OrderGraphNode(newCost,newPath);
+                OrderGraphNode newNode = new OrderGraphNode(newCost,newPath,pathCost);
                 pq.add(newNode);
             }
         }
@@ -110,13 +109,6 @@ public class OrderGraphEnumerator {
         this.totalTime += endTime-startTime;
 
         return solution;
-    }
-
-    static BitSet pathToBitSet(List<Integer> path) {
-        BitSet bs = new BitSet(path.size());
-        for (int i : path)
-            bs.set(i);
-        return bs;
     }
 
     /**
@@ -149,6 +141,12 @@ public class OrderGraphEnumerator {
         return matrix;
     }
 
+    int lastCost(Path path) {
+        int row = path.size()-1;
+        int col = path.value();
+        return this.problem.costMatrix[row][col];
+    }
+
     public void printCacheStats() {
         System.out.printf("cache hits: %d\n", this.cache.hits);
         System.out.printf("cache miss: %d\n", this.cache.misses);
@@ -159,7 +157,7 @@ public class OrderGraphEnumerator {
         //int n = 10;
         //int k = 3628800;
         int n = 40;
-        int k = 10000;
+        int k = 100000;
         int bound = 10;
         int seed = 0;
 
@@ -243,14 +241,16 @@ public class OrderGraphEnumerator {
  */
 class OrderGraphNode implements Comparable<OrderGraphNode> {
     int cost;
-    List<Integer> path; //AC: to array?
+    Path path;
+    int pathCost;
     int length;
     int id;
     static int id_counter = 0;
 
-    public OrderGraphNode(int cost, List<Integer> path) {
+    public OrderGraphNode(int cost, Path path, int pathCost) {
         this.cost = cost;
         this.path = path;
+        this.pathCost = pathCost;
         this.length = path.size();
         this.id = id_counter++;
     }
@@ -278,12 +278,8 @@ class OrderGraphNode implements Comparable<OrderGraphNode> {
     }
 
     public AssignmentSolution solution() {
-        int[] path = new int[this.path.size()];
-        for (int i = 0; i < this.path.size(); i++)
-            path[i] = this.path.get(i);
-        int cost = this.cost;
-        return new AssignmentSolution(path,cost);
-
+        int[] sol = this.path.toArray();
+        return new AssignmentSolution(sol,this.cost);
     }
 }
 
