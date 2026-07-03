@@ -14,7 +14,7 @@ import java.util.Random;
  */
 public class OrderGraphEnumerator {
     AssignmentProblem problem;
-    OrderGraphCache cache;
+    OrderGraph graph;
 
     // stats for algorithm performance
     int totalCalls;
@@ -40,55 +40,60 @@ public class OrderGraphEnumerator {
     public List<AssignmentSolution> enumerate(int k) {
         // initialize data structures
         List<AssignmentSolution> topK = new ArrayList<>();
-        this.cache = new OrderGraphCache(this.problem.numRows,
-                                         this.problem.numCols);
 
         // initial call to Hungarian algorithm
         AssignmentSolution solution = callHungarian(this.problem.costMatrix);
 
+        // initialize order graph
+        this.graph = new OrderGraph(this.problem);
+        OrderGraphNode root = this.graph.makeRoot(solution.cost);
+
         // initialize priority queue
-        PriorityQueue<OrderGraphNode> pq = new PriorityQueue<>();
+        PriorityQueue<PQNode> pq = new PriorityQueue<>();
         Path path = Path.emptyPath();
-        OrderGraphNode node = new OrderGraphNode(solution.cost,path,0);
-        pq.add(node);
+        PQNode pqNode = new PQNode(solution.cost,path,0,root);
+        pq.add(pqNode);
 
         while (topK.size() < k && !pq.isEmpty()) {
             // pop best solution
-            node = pq.poll();
+            pqNode = pq.poll();
 
-            if (node.path.size() == this.problem.numRows) {
+            if (pqNode.path.size() == this.problem.numRows) {
                 // found a leaf node
-                topK.add(node.solution());
+                topK.add(pqNode.solution());
                 continue;
             }
 
             // get set of used columns
-            BitSet cols = node.path.toBitSet();
+            int childIndex = 0;
+            BitSet cols = pqNode.ogNode.cols;
             // generate children: try assigning the next row
             for (int col = 0; col < this.problem.numCols; col++) {
                 // skip if column is already used
                 if (cols.get(col)) continue;
 
                 // update path to node
-                Path newPath = node.path.append(col);
+                Path newPath = pqNode.path.append(col);
                 BitSet newCols = (BitSet)cols.clone(); // AC: might not scale well
                 newCols.set(col);
 
                 // check if sub-problem has been solved before
-                int solCost = 0;
-                if (this.cache.contains(newCols))
-                    solCost = this.cache.get(newCols);
+                OrderGraphNode ogNode = pqNode.ogNode;
+                OrderGraphNode childOgNode;
+                if (ogNode.containsChild(childIndex,newCols))
+                    childOgNode = ogNode.get(childIndex);
                 else {
                     int[][] newMatrix = subMatrix(newCols);
-                    solCost = callHungarian(newMatrix).cost;
-                    this.cache.put(newCols,solCost);
+                    int solCost = callHungarian(newMatrix).cost;
+                    childOgNode = ogNode.put(childIndex,newCols,solCost);
                 }
+                childIndex++;
 
                 // combine cost to node and cost of node
-                int pathCost = node.pathCost + lastCost(newPath);
-                int newCost = pathCost + solCost;
+                int pathCost = pqNode.pathCost + lastCost(newPath);
+                int newCost = pathCost + childOgNode.value;
                 // push child onto pq
-                OrderGraphNode newNode = new OrderGraphNode(newCost,newPath,pathCost);
+                PQNode newNode = new PQNode(newCost,newPath,pathCost,childOgNode);
                 pq.add(newNode);
             }
         }
@@ -148,8 +153,8 @@ public class OrderGraphEnumerator {
     }
 
     public void printCacheStats() {
-        System.out.printf("cache hits: %d\n", this.cache.hits);
-        System.out.printf("cache miss: %d\n", this.cache.misses);
+        System.out.printf("cache hits: %d\n", this.graph.cache.hits);
+        System.out.printf("cache miss: %d\n", this.graph.cache.misses);
         System.out.printf("hungarian time: %.4f (%d calls)\n", this.totalTime*1e-9, this.totalCalls);
     }
 
@@ -157,10 +162,10 @@ public class OrderGraphEnumerator {
         //int n = 10;
         //int k = 3628800;
         int n = 40;
-        int k = 100000;
+        int k = 110000;
         int bound = 10;
         int seed = 0;
-
+        long start, end;
 
         System.out.printf("%d-x-%d matrix, k=%d, bound=%d\n", n, n, k, bound);
 
@@ -179,13 +184,10 @@ public class OrderGraphEnumerator {
         List<AssignmentSolution> topK = null;
         List<AssignmentSolution> topK2 = null;
 
-        //List<AssignmentSolution> topK = new ArrayList<>();
-        //long start, end;
-
         System.out.println("enumerating...");
-        long start = System.nanoTime();
+        start = System.nanoTime();
         topK = ogEnumerator.enumerate(k);
-        long end = System.nanoTime();
+        end = System.nanoTime();
         System.out.printf("timer: %.4f\n", ((end-start)*1e-9));
 
         if (runMurtys) {
@@ -207,8 +209,10 @@ public class OrderGraphEnumerator {
                     AssignmentSolution r1 = topK.get(i);
                     AssignmentSolution r2 = topK2.get(i);
                     if (r1.cost != r2.cost) {
-                        //if (!r1.equals(r2)) {
                         ok = false;
+                        System.out.printf("index = %d\n", i);
+                        System.out.println(r1);
+                        System.out.println(r2);
                         break;
                     }
                 }
@@ -218,10 +222,16 @@ public class OrderGraphEnumerator {
 
         /*
         // print top-k and bottom-k solutions
-        System.out.println(java.util.Arrays.deepToString(costMatrix));
+        //System.out.println(java.util.Arrays.deepToString(costMatrix));
+        System.out.println("==1:");
         for (int i = 0; i < 10; i++) {
             System.out.println(topK.get(i));
         }
+        System.out.println("==2:");
+        for (int i = 0; i < 10; i++) {
+            System.out.println(topK2.get(i));
+        }
+        System.out.println("==3:");
         for (int i = 0; i < 10; i++) {
             System.out.println(topK.get(topK.size()-i-1));
         }
@@ -239,7 +249,8 @@ public class OrderGraphEnumerator {
 /**
  * Used by Order Graph Enumerator.
  */
-class OrderGraphNode implements Comparable<OrderGraphNode> {
+class PQNode implements Comparable<PQNode> {
+    OrderGraphNode ogNode;
     int cost;
     Path path;
     int pathCost;
@@ -247,8 +258,9 @@ class OrderGraphNode implements Comparable<OrderGraphNode> {
     int id;
     static int id_counter = 0;
 
-    public OrderGraphNode(int cost, Path path, int pathCost) {
+    public PQNode(int cost, Path path, int pathCost, OrderGraphNode ogNode) {
         this.cost = cost;
+        this.ogNode = ogNode;
         this.path = path;
         this.pathCost = pathCost;
         this.length = path.size();
@@ -259,7 +271,7 @@ class OrderGraphNode implements Comparable<OrderGraphNode> {
      * This is for ordering nodes in the priority queue.  Order by
      * cost.
      */
-    public int compareTo(OrderGraphNode other) {
+    public int compareTo(PQNode other) {
         if (this.cost < other.cost)
             return -1;
         else if (this.cost > other.cost)
@@ -280,55 +292,5 @@ class OrderGraphNode implements Comparable<OrderGraphNode> {
     public AssignmentSolution solution() {
         int[] sol = this.path.toArray();
         return new AssignmentSolution(sol,this.cost);
-    }
-}
-
-class OrderGraphCache {
-    ArrayList<HashMap<BitSet,Integer>> cache;
-    int hits;
-    int misses;
-
-    public OrderGraphCache(int numRows, int numCols) {
-        // initialize cache
-        this.cache = new ArrayList<>(numRows+1);
-        for (int i = 0; i <= numRows; i++)
-            cache.add(new HashMap<BitSet,Integer>());
-        // prime cache with solved problem, which has 0 remaining cost
-        BitSet trivialSet = allCols(numCols);
-        cache.get(numRows).put(trivialSet,0);
-
-        this.hits = 0;
-        this.misses = 0;
-    }
-
-    /**
-     * @param numCols number of columns
-     * @return A set containing all integers from 0..numCols-1
-     */
-    static BitSet allCols(int numCols) {
-        BitSet all = new BitSet(numCols);
-        all.set(0,numCols);
-        return all;
-    }
-
-    public boolean contains(BitSet key) {
-        int len = key.cardinality();
-        if (this.cache.get(len).containsKey(key)) {
-            this.hits++;
-            return true;
-        } else {
-            this.misses++;
-            return false;
-        }
-    }
-
-    public int get(BitSet key) {
-        int len = key.cardinality();
-        return this.cache.get(len).get(key);
-    }
-
-    public void put(BitSet key, int value) {
-        int len = key.cardinality();
-        this.cache.get(len).put(key,value);
     }
 }
