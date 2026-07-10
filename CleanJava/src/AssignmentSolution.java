@@ -40,7 +40,7 @@ public class AssignmentSolution {
     }
 
     public String toString() {
-        return String.format("%.4f: %s", this.cost, java.util.Arrays.toString(this.assignment));
+        return String.format("%d: %s", this.cost, java.util.Arrays.toString(this.assignment));
     }
 
     static List<Integer> asList(int[] array) {
